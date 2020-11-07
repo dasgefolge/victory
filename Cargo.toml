@@ -1,0 +1,11 @@
+[package]
+name = "victory"
+version = "0.1.0"
+authors = [
+    "Fenhl <fenhl@fenhl.net>",
+    "leiftw <leif@leif.tw>"
+]
+edition = "2018"
+
+[dependencies]
+enum-iterator = "0.6"
