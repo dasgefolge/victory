@@ -1,8 +1,11 @@
-use enum_iterator::IntoEnumIterator;
+use {
+    enum_iterator::IntoEnumIterator,
+    smart_default::SmartDefault,
+};
 
-#[derive(IntoEnumIterator)]
+#[derive(SmartDefault, IntoEnumIterator, PartialEq, Eq)]
 pub(crate) enum Role {
-    Angel,
+    #[default]
     Hunter,
     Vampire,
     Jester,
@@ -10,4 +13,5 @@ pub(crate) enum Role {
     Wolf,
     Witch,
     Mayor,
+    Angel, // phase functions as end of cycle
 }
