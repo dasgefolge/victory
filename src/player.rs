@@ -26,7 +26,7 @@ impl<P> Player<P> {
 #[derive(Clone, Copy)]
 pub(crate) struct Condition {
     /// has action token (relevant for angel and active vampire)
-    ready: bool,
+    pub(crate) ready: bool,
     pub(crate) bitten: bool,
 }
 

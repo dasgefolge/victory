@@ -1,7 +1,4 @@
-use {
-    enum_iterator::IntoEnumIterator,
-    itertools::Itertools as _,
-};
+use enum_iterator::IntoEnumIterator;
 
 pub(crate) trait Cycle {
     /// Returns the element of the cycle that comes before `self`.

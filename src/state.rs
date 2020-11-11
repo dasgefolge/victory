@@ -4,6 +4,7 @@ use {
         hash::Hash,
         mem,
     },
+    hashbag::HashBag,
     smart_default::SmartDefault,
     crate::{
         identities::{
@@ -44,6 +45,10 @@ impl<P: Eq + Hash> State<P> {
     fn advance_game(&mut self, input: Input) {
         match input {
             Input::Action(action) => {
+                let phase = self.phase;
+                self.players.iter_mut()
+                    .filter(|player| player.role == phase)
+                    .for_each(|player| if let Some(mut cond) = player.condition { cond.ready = false });
                 if unimplemented!() /*TODO Engel kann diese Aktion engeln */ {
                     self.pending_action = Some(action);
                 } else {
@@ -67,20 +72,26 @@ impl<P: Eq + Hash> State<P> {
     fn resolve_action(&mut self, action: Action) {
         match action {
             Action::Shoot => self.kill(self.target.expect("no target to shoot")),
-            Action::Aim(p) => {
-                assert!(self.players[p].condition.is_some()); // can't aim at dead players
-                self.target = Some(p);
+            Action::Aim(seat) => {
+                assert!(self.players[seat].condition.is_some()); // can't aim at dead players
+                self.target = Some(seat);
             }
-            Action::Bite(p) => {
-                if let Some(ref mut cond) = self.players[p].condition {
+            Action::Bite(seat) => {
+                if let Some(ref mut cond) = self.players[seat].condition {
                     cond.bitten = true;
                 } else {
                     panic!("can't bite dead player")
                 }
             }
-            Action::Swap(p0, p1) => {
+            Action::Swap(seat0, seat1) => {
                 //TODO
             }
+            Action::Eat(map) => {
+                let counts = map.into_iter().map(|(_, target)| target).collect::<HashBag<_>>();
+                if let Some((seat, _)) = counts.into_iter().max_by_key(|(_, count)| *count) {
+                    self.kill(seat);
+                }
+            },
             Action::VoteResult(opt_p) => if let Some(p) = opt_p { self.kill(p) },
         }
         self.set_next_phase();
@@ -88,10 +99,10 @@ impl<P: Eq + Hash> State<P> {
 
     fn set_next_phase(&mut self) {
         loop {
-            self.check_wincons();
             self.phase = self.phase.succ();
+            self.check_wincons();
             if self.phase == Role::Angel {
-                // angel phase used to process end-of-cycle stuff
+                // angel phase used for end-of-cycle cleanup
                 if self.shield_is_current {
                     self.shield_is_current = false;
                 } else {
@@ -104,7 +115,7 @@ impl<P: Eq + Hash> State<P> {
     }
 
     fn check_wincons(&mut self) {
-        let mut vs = self.players.iter()
+        let vs = self.players.iter()
             .enumerate()
             .filter(|(_, player)| if let Wincon::Static(check) = player.identity.wincon() { check(self) } else { false })
             .map(|(seat, _)| seat)
@@ -112,7 +123,7 @@ impl<P: Eq + Hash> State<P> {
         if !vs.is_empty() { self.victory(vs) }
     }
 
-    fn kill(&mut self, seat: Seat) {
+    fn kill(&mut self, seat: Seat) { //TODO day/night? method?
         assert!(self.players[seat].condition.is_some()); // make sure player was alive
         self.players[seat].condition = None;
         self.mourning = true;
@@ -159,6 +170,7 @@ pub enum Action {
     Aim(Seat),
     Bite(Seat),
     Swap(Seat, Seat),
+    Eat(HashMap<Seat, Seat>), //TODO decide whether werewolves can vote not to eat anyone (HashMap<Seat, Option<Seat>>)
 }
 
 pub(crate) type Seat = usize;
