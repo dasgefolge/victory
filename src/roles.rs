@@ -5,8 +5,8 @@ use {
 };
 
 /// Roles of the game, which also are the phases of a day/night cycle
-#[derive(SmartDefault, Clone, Copy, IntoEnumIterator, PartialEq, Eq)]
-pub(crate) enum Role {
+#[derive(Debug, SmartDefault, Clone, Copy, IntoEnumIterator, PartialEq, Eq, Hash)]
+pub enum Role {
     /// first phase, not default role
     #[default]
     Hunter,
@@ -21,18 +21,8 @@ pub(crate) enum Role {
 }
 
 impl Role {
-    pub(crate) fn list() -> Vec<Role> {
-        vec![
-            Hunter,
-            Vampire,
-            Jester,
-            Seer,
-            Wolf,
-            Wolf,
-            Wolf,
-            Witch,
-            Mayor,
-            Angel,
-        ]
+    pub(crate) fn list() -> impl Iterator<Item = Role> {
+        Role::into_enum_iter()
+            .flat_map(|role| if role == Wolf { vec![role; 3] } else { vec![role] })
     }
 }

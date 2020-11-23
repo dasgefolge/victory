@@ -10,4 +10,12 @@ edition = "2018"
 [dependencies]
 enum-iterator = "0.6"
 hashbag = "0.1"
+itertools = "0.9"
+multiset = "0.0.5"
+paw = "1"
+rand = "0.7"
 smart-default = "0.6"
+
+[dependencies.structopt]
+version = "0.3"
+features = ["paw"]

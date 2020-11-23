@@ -2,11 +2,13 @@ use {
     std::{
         convert::Infallible as Never,
         hash::Hash,
+        iter,
         ops::BitOr,
     },
     crate::{
         roles::Role,
         state::{
+            PlayerId,
             Seat,
             State,
         },
@@ -19,7 +21,7 @@ use {
     },
 };
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum SoloIdentity {
     Sherlock,
     V,
@@ -28,6 +30,7 @@ pub(crate) enum SoloIdentity {
     Macbeth,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum Identity {
     Solo(SoloIdentity),
     Romeo,
@@ -39,6 +42,10 @@ pub(crate) enum Identity {
 }
 
 impl Identity {
+    pub(crate) fn list() -> impl Iterator<Item = Identity> {
+        vec![Solo(Sherlock),Solo(V),Solo(JackTheRipper),Solo(Queen),Solo(Macbeth),Romeo,Juliet,Single,Churchill,Doyle,Mozart].into_iter() //TODO: recursive enum iter macro
+    }
+
     pub(crate) fn party(&self) -> Party {
         match *self {
             Solo(solo) => SoloParty(solo),
@@ -47,13 +54,13 @@ impl Identity {
         }
     }
 
-    pub(crate) fn wincon<P: Eq + Hash>(&self) -> Wincon<P> {
+    pub(crate) fn wincon<P: PlayerId>(&self) -> Wincon<P> {
         (match self {
             Romeo | Juliet | Single => None,
             Churchill => With(SoloParty(Queen)),
             Doyle => With(SoloParty(Sherlock)),
             Mozart => With(Lovers),
-            Solo(Queen) => Static(Box::new(|state| state.phase == Role::Angel && !state.mourning)),
+            Solo(Queen) => Static(Box::new(|state| state.phase == Some(Role::Angel) && !state.mourning)),
             _ => unimplemented!(), //TODO
         }) | self.party().wincon()
     }
@@ -61,7 +68,7 @@ impl Identity {
 
 type Flip = Never; // "IO Bool"
 
-pub(crate) enum Wincon<P: Eq + Hash> {
+pub(crate) enum Wincon<P: PlayerId> {
     Static(Box<dyn Fn(&State<P>) -> bool>),
     Flips(Flip),
     With(Party),
@@ -70,7 +77,7 @@ pub(crate) enum Wincon<P: Eq + Hash> {
     None,
 }
 
-impl<P: Eq + Hash> Wincon<P> {
+impl<P: PlayerId> Wincon<P> {
     pub(crate) fn is_with(&self, state: &State<P>, victors: &[Seat]) -> bool {
         match self {
             With(party) => victors.iter().any(|&seat| state.players[seat].identity.party() == *party),
@@ -80,7 +87,7 @@ impl<P: Eq + Hash> Wincon<P> {
     }
 }
 
-impl<P: Eq + Hash> BitOr for Wincon<P> {
+impl<P: PlayerId> BitOr for Wincon<P> {
     type Output = Wincon<P>;
 
     fn bitor(self, rhs: Wincon<P>) -> Wincon<P> {
@@ -99,7 +106,7 @@ pub(crate) enum Party {
 }
 
 impl Party {
-    fn wincon<P: Eq + Hash>(&self) -> Wincon<P> {
+    fn wincon<P: PlayerId>(&self) -> Wincon<P> {
         match self {
             SoloParty(_) => None,
             Lovers => Flips(unimplemented!()), //TODO
