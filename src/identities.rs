@@ -2,7 +2,6 @@ use {
     std::{
         convert::Infallible as Never,
         hash::Hash,
-        iter,
         ops::BitOr,
     },
     crate::{
@@ -80,7 +79,7 @@ pub(crate) enum Wincon<P: PlayerId> {
 impl<P: PlayerId> Wincon<P> {
     pub(crate) fn is_with(&self, state: &State<P>, victors: &[Seat]) -> bool {
         match self {
-            With(party) => victors.iter().any(|&seat| state.players[seat].identity.party() == *party),
+            With(party) => victors.iter().any(|&seat| state.players[seat].character.as_ref().map_or(false, |c| c.identity.party() == *party)),
             Either(lhs, rhs) => lhs.is_with(state, victors) || rhs.is_with(state, victors),
             _ => false,
         }
