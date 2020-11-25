@@ -4,6 +4,7 @@ use {
         hash::Hash,
         ops::BitOr,
     },
+    enum_iterator::IntoEnumIterator,
     crate::{
         roles::Role,
         state::{
@@ -20,7 +21,7 @@ use {
     },
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, IntoEnumIterator, PartialEq, Eq, Hash)]
 pub(crate) enum SoloIdentity {
     Sherlock,
     V,
@@ -29,7 +30,7 @@ pub(crate) enum SoloIdentity {
     Macbeth,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, IntoEnumIterator, PartialEq, Eq, Hash)]
 pub(crate) enum Identity {
     Solo(SoloIdentity),
     Romeo,
@@ -41,10 +42,6 @@ pub(crate) enum Identity {
 }
 
 impl Identity {
-    pub(crate) fn list() -> impl Iterator<Item = Identity> {
-        vec![Solo(Sherlock),Solo(V),Solo(JackTheRipper),Solo(Queen),Solo(Macbeth),Romeo,Juliet,Single,Churchill,Doyle,Mozart].into_iter() //TODO: recursive enum iter macro
-    }
-
     pub(crate) fn party(&self) -> Party {
         match *self {
             Solo(solo) => SoloParty(solo),

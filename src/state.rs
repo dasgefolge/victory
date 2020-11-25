@@ -7,6 +7,7 @@ use {
         hash::Hash,
         mem,
     },
+    enum_iterator::IntoEnumIterator as _,
     hashbag::HashBag,
     itertools::{
         EitherOrBoth,
@@ -113,7 +114,7 @@ impl<P: PlayerId> State<P> {
                         
                         self.just_quit.clear();
                         let free_roles = free_attributes(&self.players, Role::list(), |c| c.role);
-                        let free_identities = free_attributes(&self.players, Identity::list(), |c| c.identity);
+                        let free_identities = free_attributes(&self.players, Identity::into_enum_iter(), |c| c.identity);
                         self.players.iter_mut()
                             .filter(|player| player.character.is_none())
                             .zip_longest(free_roles.into_iter().zip(free_identities))
